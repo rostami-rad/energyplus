@@ -4,7 +4,10 @@ import { useState, useRef, useEffect } from 'react';
 import ChatMessage from './ChatMessage';
 import ChatInput from './ChatInput';
 import ResultsVisualization from './ResultsVisualization';
+import IDFUpload from './IDFUpload';
 import { runSimulation, SimulationResponse } from '@/lib/api';
+import { useTheme } from './ThemeProvider';
+import { Moon, Sun } from 'lucide-react';
 
 export interface Message {
   role: 'user' | 'assistant';
@@ -18,6 +21,7 @@ export default function ChatInterface() {
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState<SimulationResponse | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const { theme, toggleTheme } = useTheme();
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -26,6 +30,18 @@ export default function ChatInterface() {
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  const [customIDF, setCustomIDF] = useState<string | null>(null);
+
+  const handleIDFUpload = (content: string) => {
+    setCustomIDF(content);
+    const uploadMessage: Message = {
+      role: 'user',
+      content: 'Using custom IDF file for simulation',
+      timestamp: new Date(),
+    };
+    setMessages((prev) => [...prev, uploadMessage]);
+  };
 
   const handleSendMessage = async (message: string) => {
     if (!message.trim() || loading) return;
@@ -42,7 +58,8 @@ export default function ChatInterface() {
 
     try {
       // Run simulation
-      const response = await runSimulation(message);
+      const response = await runSimulation(message, customIDF || undefined);
+      setCustomIDF(null); // Reset after use
 
       // Add assistant message
       const assistantMessage: Message = {
@@ -83,9 +100,19 @@ export default function ChatInterface() {
         <div className="bg-bg-medium border-b border-border px-6 py-4">
           <div className="flex items-center justify-between">
             <h1 className="text-xl font-semibold">EnergyPlus Chat Interface</h1>
-            <div className="flex items-center gap-2 text-sm text-text-muted">
-              <div className="w-2 h-2 rounded-full bg-success"></div>
-              <span>Connected</span>
+            <div className="flex items-center gap-3">
+              <IDFUpload onFileUpload={handleIDFUpload} />
+              <div className="flex items-center gap-2 text-sm text-text-muted">
+                <div className="w-2 h-2 rounded-full bg-success"></div>
+                <span>Connected</span>
+              </div>
+              <button
+                onClick={toggleTheme}
+                className="p-2 hover:bg-bg-light rounded-lg transition-colors"
+                title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} theme`}
+              >
+                {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
+              </button>
             </div>
           </div>
         </div>

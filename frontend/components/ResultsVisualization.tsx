@@ -1,6 +1,6 @@
 'use client';
 
-import { X } from 'lucide-react';
+import { X, Download } from 'lucide-react';
 import { SimulationResponse } from '@/lib/api';
 import EnergyChart from './EnergyChart';
 import EnergyBreakdown from './EnergyBreakdown';
@@ -16,17 +16,50 @@ export default function ResultsVisualization({
 }: ResultsVisualizationProps) {
   const { results: data } = results;
 
+  const handleDownload = () => {
+    // Create CSV content
+    const csvContent = [
+      ['Energy Type', 'Consumption (kWh)'],
+      ['Cooling', data.energy_by_type.cooling],
+      ['Heating', data.energy_by_type.heating],
+      ['Lighting', data.energy_by_type.lighting],
+      ['Equipment', data.energy_by_type.equipment],
+      ['Ventilation', data.energy_by_type.ventilation],
+      ['Total', data.total_energy],
+    ].map(row => row.join(',')).join('\n');
+
+    // Create and download file
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `energyplus_results_${new Date().toISOString().split('T')[0]}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
+  };
+
   return (
     <div className="w-[500px] bg-bg-medium border-l border-border flex flex-col">
       {/* Header */}
       <div className="p-4 border-b border-border flex items-center justify-between">
         <h2 className="text-lg font-semibold">Simulation Results</h2>
-        <button
-          onClick={onClose}
-          className="p-2 hover:bg-bg-light rounded-lg transition-colors"
-        >
-          <X size={20} className="text-text-secondary" />
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleDownload}
+            className="p-2 hover:bg-bg-light rounded-lg transition-colors flex items-center gap-2"
+            title="Download Results"
+          >
+            <Download size={18} className="text-text-secondary" />
+          </button>
+          <button
+            onClick={onClose}
+            className="p-2 hover:bg-bg-light rounded-lg transition-colors"
+          >
+            <X size={20} className="text-text-secondary" />
+          </button>
+        </div>
       </div>
 
       {/* Content */}

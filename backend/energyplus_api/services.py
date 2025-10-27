@@ -20,12 +20,13 @@ class EnergyPlusService:
         self.output_dir = settings.ENERGYPLUS_OUTPUT_DIR
         self.energyplus_executable = self._find_energyplus_executable()
     
-    def run_simulation(self, message: str) -> dict:
+    def run_simulation(self, message: str, idf_content: Optional[str] = None) -> dict:
         """
         Run EnergyPlus simulation and return parsed results.
         
         Args:
             message: User message (not used for now, but could specify building type)
+            idf_content: Optional custom IDF file content
             
         Returns:
             Dictionary with simulation results
@@ -37,8 +38,14 @@ class EnergyPlusService:
         # Create output directory
         output_path.mkdir(parents=True, exist_ok=True)
         
-        # Use default IDF file
-        idf_file = self.idf_dir / "default.idf"
+        # Use custom IDF content if provided, otherwise use default
+        if idf_content:
+            # Save custom IDF to inputs directory
+            idf_file = self.idf_dir / f"custom_{simulation_id}.idf"
+            with open(idf_file, 'w') as f:
+                f.write(idf_content)
+        else:
+            idf_file = self.idf_dir / "default.idf"
         
         if not idf_file.exists():
             raise FileNotFoundError(f"IDF file not found: {idf_file}")

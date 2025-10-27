@@ -10,6 +10,10 @@
   --success: #10b981;
   --warning: #f59e0b;
   --error: #ef4444;
+}
+
+/* Dark theme */
+:root {
   --bg-dark: #0f172a;
   --bg-medium: #1e293b;
   --bg-light: #334155;
@@ -17,6 +21,17 @@
   --text-secondary: #cbd5e1;
   --text-muted: #94a3b8;
   --border: #334155;
+}
+
+/* Light theme */
+:root.light {
+  --bg-dark: #ffffff;
+  --bg-medium: #f8f9fa;
+  --bg-light: #e9ecef;
+  --text-primary: #0f172a;
+  --text-secondary: #1e293b;
+  --text-muted: #64748b;
+  --border: #e2e8f0;
 }
 
 * {

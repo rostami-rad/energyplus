@@ -19,7 +19,8 @@ def run_simulation(request):
     
     Request body:
     {
-        "message": "Run simulation for my building"
+        "message": "Run simulation for my building",
+        "idf_content": "Version,\n24.1;\n..."  # Optional: custom IDF file content
     }
     
     Response:
@@ -37,10 +38,11 @@ def run_simulation(request):
         # Parse request data
         data = request.data if hasattr(request, 'data') else json.loads(request.body)
         user_message = data.get('message', 'Run simulation')
+        idf_content = data.get('idf_content', None)
         
         # Run simulation
         service = EnergyPlusService()
-        results = service.run_simulation(user_message)
+        results = service.run_simulation(user_message, idf_content=idf_content)
         
         # Return response
         response_data = {
