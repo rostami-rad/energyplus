@@ -1,0 +1,44 @@
+{
+  "status": "success",
+  "total_energy": 59467,
+  "energy_by_type": {
+    "cooling": 22200,
+    "heating": 17518,
+    "lighting": 14189,
+    "equipment": 5560,
+    "ventilation": 3655
+  },
+  "energy_breakdown": [
+    {
+      "name": "Cooling",
+      "value": 22200,
+      "color": "#22d3ee"
+    },
+    {
+      "name": "Heating",
+      "value": 17518,
+      "color": "#ef4444"
+    },
+    {
+      "name": "Lighting",
+      "value": 14189,
+      "color": "#f59e0b"
+    },
+    {
+      "name": "Equipment",
+      "value": 5560,
+      "color": "#8b5cf6"
+    },
+    {
+      "name": "Ventilation",
+      "value": 3049,
+      "color": "#10b981"
+    }
+  ],
+  "additional_info": {
+    "floor_area": "4,500 m\u00b2",
+    "total_consumption": "59,467 kWh",
+    "eui": 1321.49,
+    "simulation_hours": 8275
+  }
+}
