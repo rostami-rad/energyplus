@@ -9,7 +9,7 @@ import uuid
 import sys
 from pathlib import Path
 from django.conf import settings
-from typing import Optional
+from typing import Optional, Tuple
 
 
 class EnergyPlusService:
@@ -25,7 +25,7 @@ class EnergyPlusService:
         Run EnergyPlus simulation and return parsed results.
         
         Args:
-            message: User message (not used for now, but could specify building type)
+            message: User message (can specify building type)
             idf_content: Optional custom IDF file content
             
         Returns:
@@ -38,14 +38,15 @@ class EnergyPlusService:
         # Create output directory
         output_path.mkdir(parents=True, exist_ok=True)
         
-        # Use custom IDF content if provided, otherwise use default
+        # Use custom IDF content if provided
         if idf_content:
             # Save custom IDF to inputs directory
             idf_file = self.idf_dir / f"custom_{simulation_id}.idf"
             with open(idf_file, 'w') as f:
                 f.write(idf_content)
         else:
-            idf_file = self.idf_dir / "default.idf"
+            # Try to find IDF file based on user message
+            idf_file = self._select_idf_by_message(message)
         
         if not idf_file.exists():
             raise FileNotFoundError(f"IDF file not found: {idf_file}")
@@ -53,12 +54,21 @@ class EnergyPlusService:
         try:
             # Try to run real EnergyPlus simulation
             if self.energyplus_executable:
-                results = self._run_real_simulation(idf_file, output_path)
+                results, used_mock_data = self._run_real_simulation(idf_file, output_path)
             else:
                 # Fallback to mock results if EnergyPlus not installed
                 results = self._generate_mock_results()
                 results['note'] = 'Mock data - EnergyPlus not installed'
+                used_mock_data = True
             
+            results.update(
+                {
+                    "simulation_id": simulation_id,
+                    "idf_file": idf_file.name,
+                    "used_mock_data": used_mock_data,
+                }
+            )
+
             # Store results
             results_path = output_path / "results.json"
             with open(results_path, 'w') as f:
@@ -106,6 +116,9 @@ class EnergyPlusService:
                 "total_consumption": f"{total:,} kWh",
                 "eui": round(total / 45, 2),
                 "simulation_hours": random.randint(8000, 8760)
+            },
+            "metadata": {
+                "source": "mock"
             }
         }
     
@@ -214,8 +227,13 @@ class EnergyPlusService:
         
         return None
     
-    def _run_real_simulation(self, idf_file: Path, output_path: Path) -> dict:
-        """Run actual EnergyPlus simulation."""
+    def _run_real_simulation(self, idf_file: Path, output_path: Path) -> Tuple[dict, bool]:
+        """Run actual EnergyPlus simulation.
+
+        Returns:
+            Tuple containing the results dictionary and a boolean indicating
+            whether the data comes from mock values.
+        """
         if not self.energyplus_executable:
             raise Exception("EnergyPlus executable not found")
         
@@ -244,18 +262,19 @@ class EnergyPlusService:
             if result.returncode == 0 or (result.returncode != 0 and output_path.exists()):
                 # Parse output files
                 results = self._parse_energyplus_output(output_path)
-                return results
+                is_mock = results.get("metadata", {}).get("source") != "EnergyPlus"
+                return results, is_mock
             else:
                 # If failed, fall back to mock
                 print(f"EnergyPlus simulation failed, using mock data: {result.stderr}")
-                return self._generate_mock_results()
+                return self._generate_mock_results(), True
                 
         except subprocess.TimeoutExpired:
             print("EnergyPlus simulation timed out, using mock data")
-            return self._generate_mock_results()
+            return self._generate_mock_results(), True
         except Exception as e:
             print(f"EnergyPlus simulation error: {e}, using mock data")
-            return self._generate_mock_results()
+            return self._generate_mock_results(), True
     
     def _parse_energyplus_output(self, output_path: Path) -> dict:
         """Parse EnergyPlus output files and extract energy data."""
@@ -322,6 +341,10 @@ class EnergyPlusService:
             "additional_info": {
                 "source": "EnergyPlus",
                 "output_files": [str(f) for f in csv_files]
+            },
+            "metadata": {
+                "source": "EnergyPlus",
+                "format": "csv"
             }
         }
     
@@ -337,4 +360,61 @@ class EnergyPlusService:
         except Exception as e:
             print(f"Error reading HTML: {e}")
             return None
+    
+    def _select_idf_by_message(self, message: str) -> Path:
+        """
+        Select appropriate IDF file based on user message.
+        Checks if user message mentions building type and matches available IDF files.
+        
+        Args:
+            message: User's chat message
+            
+        Returns:
+            Path to selected IDF file
+        """
+        message_lower = message.lower()
+        
+        # Define building type keywords and their corresponding IDF file names
+        building_types = {
+            'office': ['office', 'commercial office', 'office building'],
+            'residential': ['residential', 'house', 'home', 'apartment'],
+            'retail': ['retail', 'store', 'shop', 'mall'],
+            'school': ['school', 'education', 'university', 'college'],
+            'hospital': ['hospital', 'healthcare', 'medical'],
+            'hotel': ['hotel', 'hospitality', 'motel'],
+        }
+        
+        # Check if message contains building type keywords
+        selected_type = None
+        for building_type, keywords in building_types.items():
+            if any(keyword in message_lower for keyword in keywords):
+                selected_type = building_type
+                break
+        
+        # If building type found, check if corresponding IDF file exists
+        if selected_type:
+            potential_idf = self.idf_dir / f"{selected_type}.idf"
+            if potential_idf.exists():
+                return potential_idf
+        
+        # Check all available IDF files in inputs directory
+        available_idf_files = list(self.idf_dir.glob("*.idf"))
+        
+        # If building type mentioned, try to match file names
+        if selected_type:
+            for idf_file in available_idf_files:
+                if selected_type.lower() in idf_file.stem.lower():
+                    return idf_file
+        
+        # If no match found or no building type specified, use default
+        default_idf = self.idf_dir / "default.idf"
+        if default_idf.exists():
+            return default_idf
+        
+        # If no default, use first available IDF file
+        if available_idf_files:
+            return available_idf_files[0]
+        
+        # Last resort: raise error
+        raise FileNotFoundError(f"No IDF files found in {self.idf_dir}")
 

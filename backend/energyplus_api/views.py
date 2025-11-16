@@ -9,6 +9,7 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
 from .services import EnergyPlusService
+from .models import SimulationRun
 
 
 @api_view(['POST'])
@@ -44,6 +45,18 @@ def run_simulation(request):
         service = EnergyPlusService()
         results = service.run_simulation(user_message, idf_content=idf_content)
         
+        # Persist results
+        SimulationRun.objects.create(
+            simulation_id=results.get("simulation_id", "unknown"),
+            message=user_message,
+            idf_file=results.get("idf_file", ""),
+            used_mock_data=results.get("used_mock_data", False),
+            total_energy=results["total_energy"],
+            energy_by_type=results.get("energy_by_type", {}),
+            energy_breakdown=results.get("energy_breakdown", []),
+            additional_info=results.get("additional_info"),
+        )
+
         # Return response
         response_data = {
             "status": "success",
@@ -80,3 +93,38 @@ def health_check(request):
         "status": "ok",
         "message": "EnergyPlus API is running"
     }, status=status.HTTP_200_OK)
+
+
+@api_view(['GET'])
+def simulation_history(request):
+    """Return recent simulation runs."""
+    try:
+        limit = int(request.query_params.get('limit', 20))
+    except ValueError:
+        limit = 20
+
+    limit = max(1, min(limit, 100))
+
+    runs = SimulationRun.objects.all()[:limit]
+    data = [
+        {
+            "simulation_id": run.simulation_id,
+            "message": run.message,
+            "idf_file": run.idf_file,
+            "used_mock_data": run.used_mock_data,
+            "total_energy": run.total_energy,
+            "energy_by_type": run.energy_by_type,
+            "energy_breakdown": run.energy_breakdown,
+            "additional_info": run.additional_info,
+            "created_at": run.created_at.isoformat(),
+        }
+        for run in runs
+    ]
+
+    return Response(
+        {
+            "count": len(data),
+            "results": data,
+        },
+        status=status.HTTP_200_OK,
+    )

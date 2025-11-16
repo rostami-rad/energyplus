@@ -106,6 +106,7 @@ python manage.py runserver
 4. **Send Message**: Type a message like "Run simulation for office building" and click Send
 
 5. **View Results**: The system will run EnergyPlus simulation and display results with visualizations
+6. **Review History**: Click the **History** button in the header to see persisted runs, download data, or instantly re-run a previous scenario
 
 ## 📊 Features
 
@@ -123,6 +124,7 @@ python manage.py runserver
 - ⭐ Clean, organized code structure
 - ⭐ Comprehensive documentation
 - ⭐ Energy breakdown by category (Cooling, Heating, Lighting, Equipment)
+- ⭐ Persistent simulation history with replay + downloadable records
 
 ## 🗂️ Project Structure
 
@@ -152,6 +154,29 @@ Runs an EnergyPlus simulation.
 ```json
 {
   "message": "Run simulation for my building"
+}
+```
+
+### GET /api/simulation/history
+Returns the most recent simulation runs stored on the server (up to 100).
+
+**Query params:**
+- `limit` (optional) – number of runs to fetch (default 20)
+
+**Response:**
+```json
+{
+  "count": 3,
+  "results": [
+    {
+      "simulation_id": "sim_12345",
+      "message": "Run simulation for office building",
+      "total_energy": 45000,
+      "energy_by_type": {...},
+      "used_mock_data": false,
+      "created_at": "2025-11-14T18:40:12.123456Z"
+    }
+  ]
 }
 ```
 

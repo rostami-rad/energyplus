@@ -1,13 +1,14 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import ChatMessage from './ChatMessage';
 import ChatInput from './ChatInput';
 import ResultsVisualization from './ResultsVisualization';
 import IDFUpload from './IDFUpload';
-import { runSimulation, SimulationResponse } from '@/lib/api';
+import SimulationHistoryPanel from './SimulationHistoryPanel';
+import { runSimulation, SimulationResponse, fetchSimulationHistory, SimulationHistoryEntry } from '@/lib/api';
 import { useTheme } from './ThemeProvider';
-import { Moon, Sun } from 'lucide-react';
+import { History, Moon, Sun } from 'lucide-react';
 
 export interface Message {
   role: 'user' | 'assistant';
@@ -20,6 +21,9 @@ export default function ChatInterface() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState<SimulationResponse | null>(null);
+  const [historyPanelOpen, setHistoryPanelOpen] = useState(false);
+  const [history, setHistory] = useState<SimulationHistoryEntry[]>([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { theme, toggleTheme } = useTheme();
 
@@ -30,6 +34,22 @@ export default function ChatInterface() {
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  const loadHistory = useCallback(async () => {
+    setHistoryLoading(true);
+    try {
+      const data = await fetchSimulationHistory();
+      setHistory(data);
+    } catch (error) {
+      console.error('Error fetching history:', error);
+    } finally {
+      setHistoryLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadHistory();
+  }, [loadHistory]);
 
   const [customIDF, setCustomIDF] = useState<string | null>(null);
 
@@ -71,6 +91,7 @@ export default function ChatInterface() {
 
       setMessages((prev) => [...prev, assistantMessage]);
       setResults(response);
+      loadHistory();
 
       // Clear input will be handled by ChatInput component
     } catch (error) {
@@ -88,6 +109,11 @@ export default function ChatInterface() {
     }
   };
 
+  const handleHistoryRerun = (message: string) => {
+    setHistoryPanelOpen(false);
+    void handleSendMessage(message);
+  };
+
   const formatResults = (results: SimulationResponse['results']): string => {
     return `Simulation completed successfully!\n\nTotal Energy Consumption: ${results.total_energy.toLocaleString()} kWh\n\nBreakdown:\n- Cooling: ${results.energy_by_type.cooling.toLocaleString()} kWh\n- Heating: ${results.energy_by_type.heating.toLocaleString()} kWh\n- Lighting: ${results.energy_by_type.lighting.toLocaleString()} kWh\n- Equipment: ${results.energy_by_type.equipment.toLocaleString()} kWh\n- Ventilation: ${results.energy_by_type.ventilation.toLocaleString()} kWh`;
   };
@@ -102,6 +128,16 @@ export default function ChatInterface() {
             <h1 className="text-xl font-semibold">EnergyPlus Chat Interface</h1>
             <div className="flex items-center gap-3">
               <IDFUpload onFileUpload={handleIDFUpload} />
+                <button
+                  onClick={() => {
+                    setHistoryPanelOpen(true);
+                    loadHistory();
+                  }}
+                  className="flex items-center gap-2 px-4 py-2 bg-bg-light hover:bg-primary hover:text-white rounded-lg transition-colors border border-border"
+                >
+                  <History size={18} />
+                  <span>History</span>
+                </button>
               <div className="flex items-center gap-2 text-sm text-text-muted">
                 <div className="w-2 h-2 rounded-full bg-success"></div>
                 <span>Connected</span>
@@ -154,6 +190,15 @@ export default function ChatInterface() {
       {results && (
         <ResultsVisualization results={results} onClose={() => setResults(null)} />
       )}
+
+      <SimulationHistoryPanel
+        isOpen={historyPanelOpen}
+        onClose={() => setHistoryPanelOpen(false)}
+        history={history}
+        loading={historyLoading}
+        onRefresh={loadHistory}
+        onRerun={handleHistoryRerun}
+      />
     </div>
   );
 }
