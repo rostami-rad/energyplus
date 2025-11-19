@@ -18,7 +18,7 @@ export default function EnergyBreakdown({ data }: EnergyBreakdownProps) {
   const total = Object.values(data).reduce((sum, val) => sum + val, 0);
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-2 sm:space-y-3">
       {categories.map((category) => {
         const value = data[category.key as keyof EnergyByType];
         const percentage = total > 0 ? (value / total) * 100 : 0;
@@ -26,12 +26,12 @@ export default function EnergyBreakdown({ data }: EnergyBreakdownProps) {
         return (
           <div key={category.key}>
             <div className="flex justify-between mb-1">
-              <span className="text-sm text-text-secondary">{category.label}</span>
-              <span className="text-sm font-semibold text-text-primary">
+              <span className="text-xs sm:text-sm text-text-secondary">{category.label}</span>
+              <span className="text-xs sm:text-sm font-semibold text-text-primary">
                 {value.toLocaleString()} kWh
               </span>
             </div>
-            <div className="h-2 bg-bg-medium rounded-full overflow-hidden">
+            <div className="h-1.5 sm:h-2 bg-bg-medium rounded-full overflow-hidden">
               <div
                 className="h-full transition-all duration-500"
                 style={{

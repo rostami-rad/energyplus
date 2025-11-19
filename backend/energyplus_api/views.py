@@ -15,37 +15,16 @@ from .models import SimulationRun
 @api_view(['POST'])
 @csrf_exempt
 def run_simulation(request):
-    """
-    API endpoint to run EnergyPlus simulation.
-    
-    Request body:
-    {
-        "message": "Run simulation for my building",
-        "idf_content": "Version,\n24.1;\n..."  # Optional: custom IDF file content
-    }
-    
-    Response:
-    {
-        "status": "success",
-        "simulation_id": "sim_12345",
-        "message": "Simulation completed",
-        "results": {
-            "total_energy": 45000,
-            "energy_by_type": {...}
-        }
-    }
-    """
+    """Run an EnergyPlus simulation."""
     try:
-        # Parse request data
         data = request.data if hasattr(request, 'data') else json.loads(request.body)
         user_message = data.get('message', 'Run simulation')
         idf_content = data.get('idf_content', None)
         
-        # Run simulation
         service = EnergyPlusService()
         results = service.run_simulation(user_message, idf_content=idf_content)
         
-        # Persist results
+        # TODO: Maybe add cleanup job for old simulations
         SimulationRun.objects.create(
             simulation_id=results.get("simulation_id", "unknown"),
             message=user_message,
@@ -57,15 +36,12 @@ def run_simulation(request):
             additional_info=results.get("additional_info"),
         )
 
-        # Return response
-        response_data = {
+        return Response({
             "status": "success",
             "simulation_id": results.get("simulation_id", "unknown"),
             "message": "Simulation completed successfully",
             "results": results
-        }
-        
-        return Response(response_data, status=status.HTTP_200_OK)
+        }, status=status.HTTP_200_OK)
         
     except FileNotFoundError as e:
         return Response(
@@ -88,11 +64,8 @@ def run_simulation(request):
 
 @api_view(['GET'])
 def health_check(request):
-    """Health check endpoint."""
-    return Response({
-        "status": "ok",
-        "message": "EnergyPlus API is running"
-    }, status=status.HTTP_200_OK)
+    """Basic health check."""
+    return Response({"status": "ok"}, status=status.HTTP_200_OK)
 
 
 @api_view(['GET'])
@@ -103,6 +76,7 @@ def simulation_history(request):
     except ValueError:
         limit = 20
 
+    # Cap at 100 to avoid performance issues
     limit = max(1, min(limit, 100))
 
     runs = SimulationRun.objects.all()[:limit]

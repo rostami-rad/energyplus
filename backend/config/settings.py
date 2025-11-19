@@ -142,5 +142,6 @@ CORS_ALLOWED_ORIGINS = [
 CORS_ALLOW_CREDENTIALS = True
 
 # EnergyPlus Settings
+# TODO: maybe make these configurable via env vars
 ENERGYPLUS_IDF_DIR = BASE_DIR / 'simulations' / 'inputs'
 ENERGYPLUS_OUTPUT_DIR = BASE_DIR / 'simulations' / 'outputs'

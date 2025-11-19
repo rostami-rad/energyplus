@@ -13,7 +13,7 @@ from typing import Optional, Tuple
 
 
 class EnergyPlusService:
-    """Service for running EnergyPlus simulations and parsing results."""
+    """Handles EnergyPlus simulation runs."""
     
     def __init__(self):
         self.idf_dir = settings.ENERGYPLUS_IDF_DIR
@@ -21,16 +21,7 @@ class EnergyPlusService:
         self.energyplus_executable = self._find_energyplus_executable()
     
     def run_simulation(self, message: str, idf_content: Optional[str] = None) -> dict:
-        """
-        Run EnergyPlus simulation and return parsed results.
-        
-        Args:
-            message: User message (can specify building type)
-            idf_content: Optional custom IDF file content
-            
-        Returns:
-            Dictionary with simulation results
-        """
+        """Run simulation and return results."""
         # Generate unique simulation ID
         simulation_id = f"sim_{uuid.uuid4().hex[:8]}"
         output_path = self.output_dir / simulation_id
@@ -80,10 +71,7 @@ class EnergyPlusService:
             raise Exception(f"Simulation failed: {str(e)}")
     
     def _generate_mock_results(self) -> dict:
-        """
-        Generate mock energy simulation results.
-        In production, this would parse actual EnergyPlus output files.
-        """
+        """Generate mock results when EnergyPlus isn't available."""
         import random
         
         # Simulate realistic energy consumption data
@@ -123,12 +111,7 @@ class EnergyPlusService:
         }
     
     def parse_output_files(self, output_path: Path) -> dict:
-        """
-        Parse EnergyPlus output files (CSV, HTML, etc.)
-        
-        This method would be implemented to parse actual output files
-        from EnergyPlus simulations.
-        """
+        """Parse EnergyPlus output files."""
         results = {}
         
         # Check for CSV output
@@ -148,7 +131,7 @@ class EnergyPlusService:
         return results
     
     def _parse_csv(self, csv_file: Path) -> dict:
-        """Parse CSV output file."""
+        """Parse CSV file."""
         data = {}
         
         try:
@@ -156,7 +139,8 @@ class EnergyPlusService:
                 reader = csv.DictReader(f)
                 for row in reader:
                     # Parse specific columns
-                    # This would need to be customized based on actual output format
+                    # TODO: Need to figure out the exact column names from EnergyPlus output
+                    # The output format seems to vary by version
                     pass
         except Exception as e:
             print(f"Error parsing CSV: {e}")
@@ -164,7 +148,7 @@ class EnergyPlusService:
         return data
     
     def _parse_html(self, html_file: Path) -> dict:
-        """Parse HTML output file."""
+        """Parse HTML file."""
         data = {}
         
         try:
@@ -301,7 +285,8 @@ class EnergyPlusService:
     
     def _extract_energy_from_csv(self, csv_files: list) -> Optional[dict]:
         """Extract energy data from CSV output files."""
-        # This is a simplified parser - would need to be customized based on actual output
+        # TODO: This needs proper implementation based on actual EnergyPlus CSV format
+        # The column names vary - need to handle different EnergyPlus versions
         energy_by_type = {
             "cooling": 0,
             "heating": 0,
@@ -315,8 +300,8 @@ class EnergyPlusService:
                 with open(csv_file, 'r') as f:
                     reader = csv.DictReader(f)
                     for row in reader:
-                        # This would need actual EnergyPlus output column names
-                        # For demo purposes, we'll use mock data
+                        # Need to map EnergyPlus column names to our structure
+                        # This is placeholder - actual implementation needed
                         pass
             except Exception as e:
                 print(f"Error reading CSV: {e}")

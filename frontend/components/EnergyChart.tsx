@@ -23,7 +23,7 @@ interface EnergyChartProps {
 
 export default function EnergyChart({ data }: EnergyChartProps) {
   return (
-    <div className="w-full h-[300px]">
+    <div className="w-full h-[200px] sm:h-[300px]">
       <ResponsiveContainer width="100%" height="100%">
         <BarChart data={data}>
           <CartesianGrid strokeDasharray="3 3" stroke="#334155" />

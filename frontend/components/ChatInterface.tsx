@@ -97,6 +97,7 @@ export default function ChatInterface() {
     } catch (error) {
       console.error('Error running simulation:', error);
       
+      // TODO: Better error messages based on error type
       const errorMessage: Message = {
         role: 'assistant',
         content: 'Sorry, I encountered an error running the simulation. Please try again or check if the backend is running.',
@@ -115,30 +116,32 @@ export default function ChatInterface() {
   };
 
   const formatResults = (results: SimulationResponse['results']): string => {
+    // TODO: Maybe make this formatting configurable or move to a utility function
     return `Simulation completed successfully!\n\nTotal Energy Consumption: ${results.total_energy.toLocaleString()} kWh\n\nBreakdown:\n- Cooling: ${results.energy_by_type.cooling.toLocaleString()} kWh\n- Heating: ${results.energy_by_type.heating.toLocaleString()} kWh\n- Lighting: ${results.energy_by_type.lighting.toLocaleString()} kWh\n- Equipment: ${results.energy_by_type.equipment.toLocaleString()} kWh\n- Ventilation: ${results.energy_by_type.ventilation.toLocaleString()} kWh`;
   };
 
   return (
-    <div className="flex h-screen w-screen">
+    <div className="flex h-screen w-screen overflow-hidden">
       {/* Main Chat Area */}
-      <div className="flex flex-col flex-1 bg-bg-dark">
+      <div className="flex flex-col flex-1 bg-bg-dark min-w-0">
         {/* Header */}
-        <div className="bg-bg-medium border-b border-border px-6 py-4">
-          <div className="flex items-center justify-between">
-            <h1 className="text-xl font-semibold">EnergyPlus Chat Interface</h1>
-            <div className="flex items-center gap-3">
+        <div className="bg-bg-medium border-b border-border px-3 sm:px-6 py-3 sm:py-4">
+          <div className="flex items-center justify-between gap-2">
+            <h1 className="text-base sm:text-xl font-semibold truncate">EnergyPlus Chat</h1>
+            <div className="flex items-center gap-1 sm:gap-3 flex-shrink-0">
               <IDFUpload onFileUpload={handleIDFUpload} />
                 <button
                   onClick={() => {
                     setHistoryPanelOpen(true);
                     loadHistory();
                   }}
-                  className="flex items-center gap-2 px-4 py-2 bg-bg-light hover:bg-primary hover:text-white rounded-lg transition-colors border border-border"
+                  className="flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-2 bg-bg-light hover:bg-primary hover:text-white rounded-lg transition-colors border border-border"
+                  title="History"
                 >
                   <History size={18} />
-                  <span>History</span>
+                  <span className="hidden sm:inline">History</span>
                 </button>
-              <div className="flex items-center gap-2 text-sm text-text-muted">
+              <div className="hidden sm:flex items-center gap-2 text-sm text-text-muted">
                 <div className="w-2 h-2 rounded-full bg-success"></div>
                 <span>Connected</span>
               </div>
@@ -154,28 +157,28 @@ export default function ChatInterface() {
         </div>
 
         {/* Messages */}
-        <div className="flex-1 overflow-y-auto px-6 py-6">
+        <div className="flex-1 overflow-y-auto px-3 sm:px-6 py-4 sm:py-6">
           {messages.length === 0 && (
             <div className="flex items-center justify-center h-full">
-              <div className="text-center">
-                <h2 className="text-2xl font-semibold mb-2">Welcome to EnergyPlus Chat</h2>
-                <p className="text-text-muted">
+              <div className="text-center px-4">
+                <h2 className="text-xl sm:text-2xl font-semibold mb-2">Welcome to EnergyPlus Chat</h2>
+                <p className="text-sm sm:text-base text-text-muted">
                   Send a message to run building energy simulations
                 </p>
               </div>
             </div>
           )}
 
-          <div className="space-y-6">
+          <div className="space-y-4 sm:space-y-6">
             {messages.map((message, index) => (
               <ChatMessage key={index} message={message} />
             ))}
           </div>
 
           {loading && (
-            <div className="flex items-center gap-2 text-text-muted mt-6">
+            <div className="flex items-center gap-2 text-text-muted mt-4 sm:mt-6">
               <div className="loading-spinner w-4 h-4 border-2 border-text-muted border-t-transparent rounded-full"></div>
-              <span>Running simulation...</span>
+              <span className="text-sm sm:text-base">Running simulation...</span>
             </div>
           )}
 
@@ -186,7 +189,7 @@ export default function ChatInterface() {
         <ChatInput onSendMessage={handleSendMessage} loading={loading} />
       </div>
 
-      {/* Results Visualization Sidebar */}
+      {/* Results Visualization Sidebar/Modal */}
       {results && (
         <ResultsVisualization results={results} onClose={() => setResults(null)} />
       )}

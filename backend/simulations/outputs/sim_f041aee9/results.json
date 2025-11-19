@@ -1,0 +1,51 @@
+{
+  "status": "success",
+  "total_energy": 64120,
+  "energy_by_type": {
+    "cooling": 24532,
+    "heating": 19023,
+    "lighting": 12584,
+    "equipment": 7981,
+    "ventilation": 6163
+  },
+  "energy_breakdown": [
+    {
+      "name": "Cooling",
+      "value": 24532,
+      "color": "#22d3ee"
+    },
+    {
+      "name": "Heating",
+      "value": 19023,
+      "color": "#ef4444"
+    },
+    {
+      "name": "Lighting",
+      "value": 12584,
+      "color": "#f59e0b"
+    },
+    {
+      "name": "Equipment",
+      "value": 7981,
+      "color": "#8b5cf6"
+    },
+    {
+      "name": "Ventilation",
+      "value": 7552,
+      "color": "#10b981"
+    }
+  ],
+  "additional_info": {
+    "floor_area": "4,500 m\u00b2",
+    "total_consumption": "64,120 kWh",
+    "eui": 1424.89,
+    "simulation_hours": 8535
+  },
+  "metadata": {
+    "source": "mock"
+  },
+  "note": "Mock data - EnergyPlus not installed",
+  "simulation_id": "sim_f041aee9",
+  "idf_file": "default.idf",
+  "used_mock_data": true
+}
